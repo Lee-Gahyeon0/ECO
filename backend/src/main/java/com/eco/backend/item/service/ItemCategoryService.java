@@ -4,7 +4,6 @@ import com.eco.backend.item.dto.ItemCategoryResponse;
 import com.eco.backend.item.rule.ItemCategoryRule;
 import org.springframework.stereotype.Service;
 
-import java.util.Comparator;
 import java.util.List;
 
 @Service
@@ -49,19 +48,25 @@ public class ItemCategoryService {
         }
 
         if (bestMatch != null) {
+            int carbonScore = calculateCarbonScore(bestMatch.category());
+
             return new ItemCategoryResponse(
                     itemName,
                     normalizedName,
                     bestMatch.category(),
-                    bestMatch.keyword()
+                    bestMatch.keyword(),
+                    carbonScore
             );
         }
+
+        int carbonScore = calculateCarbonScore("기타");
 
         return new ItemCategoryResponse(
                 itemName,
                 normalizedName,
                 "기타",
-                null
+                null,
+                carbonScore
         );
     }
 
@@ -88,6 +93,18 @@ public class ItemCategoryService {
                 .replaceAll("[0-9]+", "")
                 .replaceAll("ml|ML|l|L|g|G|kg|KG|개|입|팩|병|봉|매", "")
                 .toLowerCase();
+    }
+
+    private int calculateCarbonScore(String category) {
+        return switch (category) {
+            case "생활용품" -> 2;
+            case "음료" -> 3;
+            case "식품" -> 4;
+            case "의류" -> 4;
+            case "일회용품" -> 5;
+            case "전자제품" -> 5;
+            default -> 1;
+        };
     }
 
     private record MatchResult(String category, String keyword) {

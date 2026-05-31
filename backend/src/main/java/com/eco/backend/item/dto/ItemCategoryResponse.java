@@ -6,6 +6,7 @@ public class ItemCategoryResponse {
     private String normalizedName;
     private String category;
     private String matchedKeyword;
+    private int carbonScore;
 
     public ItemCategoryResponse() {
     }
@@ -14,12 +15,14 @@ public class ItemCategoryResponse {
             String originalName,
             String normalizedName,
             String category,
-            String matchedKeyword
+            String matchedKeyword,
+            int carbonScore
     ) {
         this.originalName = originalName;
         this.normalizedName = normalizedName;
         this.category = category;
         this.matchedKeyword = matchedKeyword;
+        this.carbonScore = carbonScore;
     }
 
     public String getOriginalName() {
@@ -36,5 +39,9 @@ public class ItemCategoryResponse {
 
     public String getMatchedKeyword() {
         return matchedKeyword;
+    }
+
+    public int getCarbonScore() {
+        return carbonScore;
     }
 }
