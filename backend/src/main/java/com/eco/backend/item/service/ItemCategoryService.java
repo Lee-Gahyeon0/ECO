@@ -39,7 +39,7 @@ public class ItemCategoryService {
             )),
             new ItemCategoryRule("음료", "차음료", 220, List.of(
                     "녹차", "홍차", "보리차", "옥수수수염차", "헛개차",
-                    "아이스티", "티즐", "블랙보리", "하늘보리"
+                    "아이스티", "티즐", "블랙보리", "하늘보리", "17차"
             )),
             new ItemCategoryRule("음료", "주스", 300, List.of(
                     "주스", "오렌지주스", "포도주스", "사과주스", "망고주스",
@@ -71,7 +71,7 @@ public class ItemCategoryService {
             new ItemCategoryRule("식품", "즉석식품", 700, List.of(
                     "김밥", "삼각김밥", "도시락", "햄버거", "핫도그",
                     "즉석밥", "햇반", "오뚜기밥", "컵밥", "죽", "레토르트",
-                    "편의점도시락", "볶음밥", "냉동볶음밥"
+                    "편의점도시락", "볶음밥", "냉동볶음밥", "3분카레", "3분짜장"
             )),
             new ItemCategoryRule("식품", "유제품", 500, List.of(
                     "우유", "서울우유", "매일우유", "남양우유", "연세우유",
@@ -117,7 +117,7 @@ public class ItemCategoryService {
             )),
             new ItemCategoryRule("생활용품", "구강용품", 300, List.of(
                     "칫솔", "치약", "가글", "구강청결제", "치실", "리스테린",
-                    "페리오", "2080", "메디안"
+                    "페리오", "2080", "2080치약", "메디안"
             )),
             new ItemCategoryRule("생활용품", "위생용품", 300, List.of(
                     "마스크", "손소독제", "소독티슈", "생리대", "팬티라이너",
@@ -356,10 +356,21 @@ public class ItemCategoryService {
                 .trim()
                 .toLowerCase()
                 .replaceAll("\\s+", "")
+
+                // 용량/중량 단위 제거: 500ml, 1.5l, 100g, 2kg 등
                 .replaceAll("[0-9]+(\\.[0-9]+)?(ml|l|g|kg)", "")
-                .replaceAll("[0-9]+", "")
+
+                // 행사 표기 제거: 1+1, 2+1
+                .replaceAll("[0-9]+\\+[0-9]+", "")
+
+                // 수량 단위 제거: 5입, 10개, 3팩, 2병 등
+                .replaceAll("[0-9]+(개|입|팩|병|봉|매)", "")
+
+                // 단독 단위 제거
                 .replaceAll("개|입|팩|병|봉|매", "")
-                .replaceAll("[^가-힣a-zA-Z]", "");
+
+                // 한글, 영어, 숫자는 유지
+                .replaceAll("[^가-힣a-zA-Z0-9]", "");
     }
 
     private record MatchResult(
