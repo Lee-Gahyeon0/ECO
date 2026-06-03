@@ -1,5 +1,8 @@
-package com.example.back.recommendation;
+package com.eco.backend.recommendation.service;
 
+import com.eco.backend.recommendation.dto.RecommendationRequest;
+import com.eco.backend.recommendation.dto.RecommendedItemResponse;
+import com.eco.backend.recommendation.dto.RecommendedPlaceResponse;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;

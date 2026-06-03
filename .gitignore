@@ -1,0 +1,27 @@
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Flutter
+front/.dart_tool/
+front/build/
+front/.flutter-plugins
+front/.flutter-plugins-dependencies
+
+# Android
+**/android/local.properties
+*.apk
+*.aab
+
+# Environment / Secrets
+.env
+.env.*
+google-services.json
+GoogleService-Info.plist
+firebase-service-account.json
+serviceAccountKey.json

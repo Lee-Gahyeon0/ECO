@@ -1,4 +1,4 @@
-package com.example.back.recommendation;
+package com.eco.backend.recommendation.dto;
 
 import java.util.List;
 
