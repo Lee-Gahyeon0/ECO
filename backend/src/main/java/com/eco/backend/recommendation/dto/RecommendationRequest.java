@@ -3,7 +3,7 @@ package com.eco.backend.recommendation.dto;
 import java.util.List;
 
 public record RecommendationRequest(
-        string userID
+        String userID,
         List<ReceiptItem> items,
         ReceiptSummary summary,
         Double lat,
