@@ -17,3 +17,7 @@ String get authApiBaseUrl {
 
   return 'http://localhost:8080';
 }
+
+String get receiptOcrTextUrl {
+  return '$authApiBaseUrl/api/receipts/ocr-text';
+}
