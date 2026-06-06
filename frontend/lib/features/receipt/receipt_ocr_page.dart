@@ -26,10 +26,13 @@ class _ReceiptOcrPageState extends State<ReceiptOcrPage> {
   File? _selectedImage;
   String _ocrText = '';
   List<Map<String, dynamic>> _ocrLines = [];
+
   Map<String, dynamic>? _analysisResult;
+  List<Map<String, dynamic>> _editableItems = [];
 
   bool _isRecognizing = false;
   bool _isSending = false;
+  bool _isSaving = false;
 
   Future<void> _pickImage(ImageSource source) async {
     final XFile? image = await _picker.pickImage(source: source);
@@ -43,6 +46,7 @@ class _ReceiptOcrPageState extends State<ReceiptOcrPage> {
       _ocrText = '';
       _ocrLines = [];
       _analysisResult = null;
+      _editableItems = [];
     });
   }
 
@@ -55,7 +59,9 @@ class _ReceiptOcrPageState extends State<ReceiptOcrPage> {
     setState(() {
       _isRecognizing = true;
       _ocrText = '';
+      _ocrLines = [];
       _analysisResult = null;
+      _editableItems = [];
     });
 
     final textRecognizer = TextRecognizer(
@@ -121,6 +127,7 @@ class _ReceiptOcrPageState extends State<ReceiptOcrPage> {
     setState(() {
       _isSending = true;
       _analysisResult = null;
+      _editableItems = [];
     });
 
     try {
@@ -139,11 +146,24 @@ class _ReceiptOcrPageState extends State<ReceiptOcrPage> {
       final decodedBody = utf8.decode(response.bodyBytes);
 
       if (response.statusCode >= 200 && response.statusCode < 300) {
+        final result = jsonDecode(decodedBody) as Map<String, dynamic>;
+        final items = result['items'];
+
         setState(() {
-          _analysisResult = jsonDecode(decodedBody) as Map<String, dynamic>;
+          _analysisResult = result;
+          _editableItems = items is List
+              ? items.map((item) {
+                  final map = item as Map<String, dynamic>;
+
+                  return {
+                    'originalName': map['originalName'] ?? map['name'] ?? '',
+                    'price': map['price'] ?? 0,
+                  };
+                }).toList()
+              : [];
         });
 
-        _showMessage('영수증 분석이 완료되었습니다.');
+        _showMessage('품목 후보 추출이 완료되었습니다. 내용을 확인해 주세요.');
       } else {
         _showMessage('백엔드 오류 ${response.statusCode}: $decodedBody');
       }
@@ -158,9 +178,98 @@ class _ReceiptOcrPageState extends State<ReceiptOcrPage> {
     }
   }
 
-  List<dynamic> get _items {
-    final items = _analysisResult?['items'];
-    return items is List ? items : [];
+  Future<void> _saveFinalReceipt() async {
+    final finalItems = _editableItems
+        .map((item) {
+          final name = '${item['originalName'] ?? ''}'.trim();
+          final price = _parsePrice(item['price']);
+
+          return {
+            'name': name,
+            'price': price,
+          };
+        })
+        .where((item) {
+          final name = '${item['name']}'.trim();
+          final price = item['price'] as int;
+
+          return name.isNotEmpty && price > 0;
+        })
+        .toList();
+
+    if (finalItems.isEmpty) {
+      _showMessage('저장할 품목이 없습니다. 품목명과 가격을 확인해 주세요.');
+      return;
+    }
+
+    setState(() {
+      _isSaving = true;
+    });
+
+    try {
+      final response = await http.post(
+        Uri.parse(receiptSaveUrl),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({
+          'userId': widget.userId,
+          'ocrText': _ocrText,
+          'ocrLines': _ocrLines,
+          'items': finalItems,
+        }),
+      );
+
+      final decodedBody = utf8.decode(response.bodyBytes);
+
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        final result = jsonDecode(decodedBody) as Map<String, dynamic>;
+
+        setState(() {
+          _analysisResult = result;
+        });
+
+        _showMessage('영수증이 최종 저장되었습니다.');
+      } else {
+        _showMessage('저장 오류 ${response.statusCode}: $decodedBody');
+      }
+    } catch (e) {
+      _showMessage('저장 요청 오류: $e');
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSaving = false;
+        });
+      }
+    }
+  }
+
+  void _addItem() {
+    setState(() {
+      _editableItems.add({
+        'originalName': '',
+        'price': 0,
+      });
+    });
+  }
+
+  void _removeItem(int index) {
+    setState(() {
+      _editableItems.removeAt(index);
+    });
+  }
+
+  int _parsePrice(dynamic value) {
+    if (value is int) {
+      return value;
+    }
+
+    if (value is num) {
+      return value.toInt();
+    }
+
+    final text = value.toString().replaceAll(RegExp(r'[^0-9]'), '');
+    return int.tryParse(text) ?? 0;
   }
 
   Map<String, dynamic>? get _summary {
@@ -202,17 +311,24 @@ class _ReceiptOcrPageState extends State<ReceiptOcrPage> {
             const SizedBox(height: 12),
             FilledButton.tonal(
               onPressed: _isSending ? null : _sendToBackend,
-              child: Text(_isSending ? '분석 요청 중...' : '백엔드 분석 요청'),
+              child: Text(_isSending ? '분석 요청 중...' : '품목 후보 추출'),
             ),
             const SizedBox(height: 20),
             _buildOcrTextCard(),
             const SizedBox(height: 20),
-            if (_analysisResult != null) ...[
+            if (_editableItems.isNotEmpty) ...[
+              _buildEditableItemList(),
+              const SizedBox(height: 12),
+              FilledButton(
+                onPressed: _isSaving ? null : _saveFinalReceipt,
+                child: Text(_isSaving ? '저장 중...' : '최종 저장'),
+              ),
+            ],
+            if (_analysisResult != null && summary != null) ...[
+              const SizedBox(height: 20),
               _buildReceiptIdCard(),
               const SizedBox(height: 12),
-              if (summary != null) _buildSummaryCard(summary),
-              const SizedBox(height: 12),
-              _buildItemList(),
+              _buildSummaryCard(summary),
             ],
           ],
         ),
@@ -273,13 +389,90 @@ class _ReceiptOcrPageState extends State<ReceiptOcrPage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-            'OCR 텍스트 / 라인 ${_ocrLines.length}개',
-            style: const TextStyle(fontWeight: FontWeight.bold),
-          ),
+              'OCR 텍스트 / 라인 ${_ocrLines.length}개',
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
             const SizedBox(height: 8),
             SelectableText(
               _ocrText.isEmpty ? '아직 추출된 텍스트가 없습니다.' : _ocrText,
             ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEditableItemList() {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                const Expanded(
+                  child: Text(
+                    '품목 후보 확인',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ),
+                TextButton.icon(
+                  onPressed: _addItem,
+                  icon: const Icon(Icons.add),
+                  label: const Text('추가'),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'OCR 결과가 틀릴 수 있으니 품목명과 가격을 확인한 뒤 최종 저장해 주세요.',
+            ),
+            const SizedBox(height: 12),
+            ...List.generate(_editableItems.length, (index) {
+              final item = _editableItems[index];
+
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      flex: 3,
+                      child: TextFormField(
+                        initialValue: '${item['originalName'] ?? ''}',
+                        decoration: const InputDecoration(
+                          labelText: '품목명',
+                          border: OutlineInputBorder(),
+                        ),
+                        onChanged: (value) {
+                          item['originalName'] = value;
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      flex: 2,
+                      child: TextFormField(
+                        initialValue: '${item['price'] ?? 0}',
+                        decoration: const InputDecoration(
+                          labelText: '가격',
+                          border: OutlineInputBorder(),
+                        ),
+                        keyboardType: TextInputType.number,
+                        onChanged: (value) {
+                          item['price'] = _parsePrice(value);
+                        },
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: () => _removeItem(index),
+                      icon: const Icon(Icons.delete_outline),
+                    ),
+                  ],
+                ),
+              );
+            }),
           ],
         ),
       ),
@@ -317,40 +510,6 @@ class _ReceiptOcrPageState extends State<ReceiptOcrPage> {
           ],
         ),
       ),
-    );
-  }
-
-  Widget _buildItemList() {
-    if (_items.isEmpty) {
-      return const Card(
-        child: Padding(
-          padding: EdgeInsets.all(12),
-          child: Text('분석된 품목이 없습니다.'),
-        ),
-      );
-    }
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text('품목별 분석 결과', style: TextStyle(fontWeight: FontWeight.bold)),
-        const SizedBox(height: 8),
-        ..._items.map((item) {
-          final map = item as Map<String, dynamic>;
-
-          return Card(
-            child: ListTile(
-              title: Text('${map['originalName']}'),
-              subtitle: Text(
-                '가격: ${map['price']}원\n'
-                '분류: ${map['category']} / ${map['subCategory']}\n'
-                '추정 탄소량: ${map['estimatedCarbonGram']}g CO₂-eq\n'
-                '점수: ${map['carbonScore']}',
-              ),
-            ),
-          );
-        }),
-      ],
     );
   }
 }
