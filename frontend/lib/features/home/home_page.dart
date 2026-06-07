@@ -7,6 +7,7 @@ import '../../utils/validators.dart';
 import '../auth/auth_gate.dart';
 import '../auth/auth_service.dart';
 import '../profile/user_profile_service.dart';
+import '../receipt/receipt_scan_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key, required this.user});
@@ -97,6 +98,20 @@ class _HomePageState extends State<HomePage> {
                 title: '획득 배지',
                 value: badges.isEmpty ? '아직 획득한 배지가 없습니다.' : badges.join(', '),
                 icon: Icons.military_tech,
+              ),
+              const SizedBox(height: 20),
+              FilledButton.icon(
+                onPressed: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => ReceiptScanPage(
+                        userId: widget.user.uid,
+                      ),
+                    ),
+                  );
+                },
+                icon: const Icon(Icons.receipt_long),
+                label: const Text('영수증 OCR 분석하기'),
               ),
             ],
           );

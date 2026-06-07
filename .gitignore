@@ -7,7 +7,10 @@
 .DS_Store
 Thumbs.db
 
-# Local secrets and generated files
+# Old / unused folders
+front/
+
+# Local secrets and generated config
 **/.env
 **/local.properties
 **/Secrets.xcconfig
@@ -17,9 +20,22 @@ Thumbs.db
 **/*firebase-adminsdk*.json
 **/service-account*.json
 
-# Flutter
+# Firebase service account
+firebase-service-account.json
+serviceAccountKey.json
+*.firebase-adminsdk.json
+backend/src/main/resources/firebase-service-account.json
+
+# Import data
+backend/src/main/resources/data/
+backend/src/main/resources/data/*.csv
+
+# Build outputs
 **/.dart_tool/
 **/build/
+**/Pods/
+
+# Flutter
 **/.flutter-plugins
 **/.flutter-plugins-dependencies
 
@@ -32,15 +48,9 @@ Thumbs.db
 .gradle/
 backend/build/
 
-firebase-service-account.json
-serviceAccountKey.json
-*.firebase-adminsdk.json
-
-
+# Frontend generated files
 frontend/lib/firebase_options.dart
 frontend/android/app/google-services.json
 frontend/android/local.properties
 frontend/ios/Runner/GoogleService-Info.plist
 frontend/ios/Flutter/Secrets.xcconfig
-backend/src/main/resources/firebase-service-account.json
-backend/src/main/resources/data/*.csv

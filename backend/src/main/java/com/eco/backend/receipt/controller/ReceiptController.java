@@ -1,6 +1,7 @@
 package com.eco.backend.receipt.controller;
 
 import com.eco.backend.receipt.dto.ReceiptAnalysisResponse;
+import com.eco.backend.receipt.dto.ReceiptFinalSaveRequest;
 import com.eco.backend.receipt.dto.ReceiptOcrTextRequest;
 import com.eco.backend.receipt.service.ReceiptService;
 import org.springframework.http.ResponseEntity;
@@ -23,8 +24,19 @@ public class ReceiptController {
         ReceiptAnalysisResponse response =
                 receiptService.analyzeOcrText(
                         request.getUserId(),
-                        request.getOcrText()
+                        request.getOcrText(),
+                        request.getOcrLines()
                 );
+
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping
+    public ResponseEntity<ReceiptAnalysisResponse> saveFinalReceipt(
+            @RequestBody ReceiptFinalSaveRequest request
+    ) {
+        ReceiptAnalysisResponse response =
+                receiptService.saveFinalReceipt(request);
 
         return ResponseEntity.ok(response);
     }
