@@ -1,7 +1,14 @@
-.DS_Store
+# IDE
 .idea/
-front/
+*.iml
 .vscode/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Old / unused folders
+front/
 
 # Local secrets and generated config
 **/.env
@@ -13,7 +20,41 @@ front/
 **/*firebase-adminsdk*.json
 **/service-account*.json
 
+# Firebase service account
+firebase-service-account.json
+serviceAccountKey.json
+*.firebase-adminsdk.json
+backend/src/main/resources/firebase-service-account.json
+
+# Import data
+backend/src/main/resources/data/
+backend/src/main/resources/data/*.csv
+
 # Build outputs
 **/.dart_tool/
 **/build/
 **/Pods/
+
+# Flutter
+**/.flutter-plugins
+**/.flutter-plugins-dependencies
+
+# Android
+**/android/local.properties
+*.apk
+*.aab
+
+# Java / Gradle
+.gradle/
+backend/build/
+
+# Frontend generated files
+frontend/lib/firebase_options.dart
+frontend/android/app/google-services.json
+frontend/android/local.properties
+frontend/ios/Runner/GoogleService-Info.plist
+frontend/ios/Flutter/Secrets.xcconfig
+
+
+frontend/android/debug.cer
+*.cer
