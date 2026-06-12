@@ -148,13 +148,12 @@ public class RecommendationService {
 
         List<RecommendedItemResponse> dbRecommendedItems = recommendItemsFromDb(request);
 
-        System.out.println("[아이템 추천] DB 추천 개수 = " + dbRecommendedItems.size());
 
         if (!dbRecommendedItems.isEmpty()) {
             return dbRecommendedItems;
         }
 
-        System.out.println("[아이템 추천] DB 추천 없음 → rule fallback 사용");
+
 
         return recommendItemsByRuleFallback(request);
     }
@@ -172,7 +171,6 @@ public class RecommendationService {
         try {
             List<EcoItem> ecoItems = ecoRecommendationRepository.findAllActiveEcoItems();
 
-            System.out.println("[아이템 추천] active eco_items 개수 = " + (ecoItems == null ? 0 : ecoItems.size()));
 
             if (ecoItems == null || ecoItems.isEmpty()) {
                 return new ArrayList<>();
@@ -187,20 +185,6 @@ public class RecommendationService {
                     scoredItems.add(scoredEcoItem);
                 }
             }
-
-            System.out.println("[아이템 추천] 점수 통과 item 개수 = " + scoredItems.size());
-
-            scoredItems.stream()
-                    .sorted(Comparator.comparingInt(ScoredEcoItem::score).reversed())
-                    .limit(10)
-                    .forEach(item -> System.out.println(
-                            "[아이템 추천 후보] name=" + item.ecoItem().getName()
-                                    + ", category=" + item.ecoItem().getCategory()
-                                    + ", subCategory=" + item.ecoItem().getSubCategory()
-                                    + ", keywords=" + item.ecoItem().getKeywords()
-                                    + ", score=" + item.score()
-                                    + ", matchedReceipt=" + item.matchName()
-                    ));
 
             List<ScoredEcoItem> sortedItems = scoredItems.stream()
                     .sorted(Comparator.comparingInt(ScoredEcoItem::score).reversed())
